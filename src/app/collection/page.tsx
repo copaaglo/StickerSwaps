@@ -9,8 +9,9 @@ const MAPPING_PATH = path.join(process.cwd(), 'data', 'sticker-mapping.json')
 
 export default async function CollectionPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/auth/login')
+  const user = session.user
 
   const isOwner = user.email === OWNER_EMAIL
 

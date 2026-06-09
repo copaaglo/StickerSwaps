@@ -4,8 +4,9 @@ import { MessagesClient } from './MessagesClient'
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ with?: string }> }) {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/auth/login')
+  const user = session.user
 
   const params = await searchParams
   const withUserId = params.with

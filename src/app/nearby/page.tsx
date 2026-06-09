@@ -4,8 +4,9 @@ import { NearbyClient } from './NearbyClient'
 
 export default async function NearbyPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/auth/login')
+  const user = session.user
 
   const [profileRes, allProfilesRes, userStickersRes, allUserStickersRes] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user.id).single(),

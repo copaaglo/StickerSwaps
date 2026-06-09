@@ -7,8 +7,9 @@ import { Post } from '@/types'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) redirect('/auth/login')
+  const user = session.user
 
   const [
     profileRes,
@@ -20,13 +21,13 @@ export default async function DashboardPage() {
     supabase.from('profiles').select('*').eq('id', user.id).single(),
     supabase.from('user_stickers').select('quantity_have, quantity_duplicate, wants').eq('user_id', user.id),
     supabase.from('messages').select('id', { count: 'exact' }).eq('receiver_id', user.id).eq('read', false),
-    supabase.from('stickers').select('id'),
+    supabase.from('stickers').select('*', { count: 'exact', head: true }),
     supabase.from('posts').select('*, profile:profiles(*)').order('created_at', { ascending: false }).limit(50),
   ])
 
   const profile       = profileRes.data
   const stickers      = stickerStatsRes.data ?? []
-  const totalStickers = totalStickersRes.data?.length ?? 0
+  const totalStickers = totalStickersRes.count ?? 0
   const initialPosts  = (postsRes.data ?? []) as Post[]
 
   const totalHave       = stickers.reduce((a, s) => a + s.quantity_have, 0)
