@@ -32,52 +32,56 @@ function rateLimitedResponse(limit: number, resetAt: number): NextResponse {
 }
 
 export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl
-  const ip = getIP(request)
+  try {
+    const { pathname } = request.nextUrl
+    const ip = getIP(request)
 
-  if (pathname.startsWith('/auth/')) {
-    const { limited, resetAt } = checkRateLimit(`auth:${ip}`, AUTH_LIMIT, AUTH_WINDOW_MS)
-    if (limited) return rateLimitedResponse(AUTH_LIMIT, resetAt)
-  } else if (pathname.startsWith('/api/')) {
-    const { limited, resetAt } = checkRateLimit(`api:${ip}`, API_LIMIT, API_WINDOW_MS)
-    if (limited) return rateLimitedResponse(API_LIMIT, resetAt)
-  }
-
-  let supabaseResponse = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
+    if (pathname.startsWith('/auth/')) {
+      const { limited, resetAt } = checkRateLimit(`auth:${ip}`, AUTH_LIMIT, AUTH_WINDOW_MS)
+      if (limited) return rateLimitedResponse(AUTH_LIMIT, resetAt)
+    } else if (pathname.startsWith('/api/')) {
+      const { limited, resetAt } = checkRateLimit(`api:${ip}`, API_LIMIT, API_WINDOW_MS)
+      if (limited) return rateLimitedResponse(API_LIMIT, resetAt)
     }
-  )
 
-  const { data: { user } } = await supabase.auth.getUser()
+    let supabaseResponse = NextResponse.next({ request })
 
-  const protectedPaths = ['/dashboard', '/collection', '/messages', '/profile']
-  const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p))
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            supabaseResponse = NextResponse.next({ request })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            )
+          },
+        },
+      }
+    )
 
-  if (isProtected && !user) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const protectedPaths = ['/dashboard', '/collection', '/messages', '/profile']
+    const isProtected = protectedPaths.some(p => request.nextUrl.pathname.startsWith(p))
+
+    if (isProtected && !user) {
+      return NextResponse.redirect(new URL('/auth/login', request.url))
+    }
+
+    if (user && (request.nextUrl.pathname === '/auth/login' || request.nextUrl.pathname === '/auth/register')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+
+    return supabaseResponse
+  } catch {
+    return NextResponse.next({ request })
   }
-
-  if (user && (request.nextUrl.pathname === '/auth/login' || request.nextUrl.pathname === '/auth/register')) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
-  }
-
-  return supabaseResponse
 }
 
 export const config = {
