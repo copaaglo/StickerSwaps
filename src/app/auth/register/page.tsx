@@ -76,7 +76,7 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -92,19 +92,15 @@ export default function RegisterPage() {
       return
     }
 
-    if (location) {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase.from('profiles').update({
-          location_lat: location.lat,
-          location_lng: location.lng,
-          location_city: location.city,
-        }).eq('id', user.id)
-      }
+    if (location && signUpData.user) {
+      await supabase.from('profiles').update({
+        location_lat: location.lat,
+        location_lng: location.lng,
+        location_city: location.city,
+      }).eq('id', signUpData.user.id)
     }
 
     router.push('/dashboard')
-    router.refresh()
   }
 
   return (
