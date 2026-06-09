@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
 
-const AUTH_LIMIT = 5
+const AUTH_LIMIT = 20
 const AUTH_WINDOW_MS = 15 * 60 * 1000
 const API_LIMIT = 100
 const API_WINDOW_MS = 15 * 60 * 1000
