@@ -1,0 +1,7 @@
+.next/
+node_modules/
+public/stickers/
+package-lock.json
+*.tsbuildinfo
+next-env.d.ts
+supabase/.branches/

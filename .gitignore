@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts: compiled binaries and build artifacts
+scripts/detect_grid
+scripts/ocr_crops
+scripts/*.tsv
+scripts/*.txt
